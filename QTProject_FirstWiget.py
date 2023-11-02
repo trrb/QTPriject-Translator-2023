@@ -1430,13 +1430,13 @@ class Translator_second(QMainWindow):
         desig_second = io.StringIO(second_design)
         uic.loadUi(desig_second, self)
         # Сортировка моделей QComboBox по алфавиту
-        self.language.model().sort(0) 
+        self.language.model().sort(0)
         self.status = self.statusBar()
         self.status.setStyleSheet(
             "QStatusBar{padding-left:8px;color:white;font-weight:bold;}")
         self.translatebutton.clicked.connect(self.translate_data)
         self.clear_button.clicked.connect(self.clear_function)
-        self.save_button.clicked.connect(self.save_function)
+        self.save_button.clicked.connect(self.save_function)  
 
     def save_function(self):
         with sqlite3.connect('translation_history_db.db') as db:
