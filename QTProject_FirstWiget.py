@@ -35,6 +35,7 @@ class SQLWigetHistory(QMainWindow, QdesignHistoryWindow):
         super().__init__()
         self.setupUi(self)
         self.box = TRRBBox()
+        self.language_history.addItem('Все языки')
         with sqlite3.connect('translation_history_db.db') as db:
             cur = db.cursor()
             result_rows = cur.execute('''SELECT id FROM history''').fetchall()
@@ -71,13 +72,20 @@ class SQLWigetHistory(QMainWindow, QdesignHistoryWindow):
         self.update_button.clicked.connect(self.updateClick)
 
     def updateClick(self):
-        pass
+        self.close()
+        self.__init__()
+        self.show()
 
     def sort_function(self):
         with sqlite3.connect('translation_history_db.db') as db:
             cur = db.cursor()
-            result = cur.execute(
-                f"""SELECT * FROM history WHERE language = (SELECT id FROM languages WHERE name = '{self.language_history.currentText()}')""").fetchall()
+            if self.language_history.currentText() != 'Все языки':
+                result = cur.execute(
+                    f"""SELECT * FROM history WHERE language = (SELECT id FROM languages
+                    WHERE name = '{self.language_history.currentText()}')""").fetchall()
+            else:
+                result = cur.execute(
+                    f"""SELECT * FROM history""").fetchall()
         self.tableWidget.setRowCount(len(result))
         self.tableWidget.setColumnCount(4)
         self.tableWidget.setColumnWidth(0, 10)
@@ -96,12 +104,16 @@ class SQLWigetHistory(QMainWindow, QdesignHistoryWindow):
 
     def delete_buttonClicked(self):
         row = self.tableWidget.currentRow()
+        print(row)
         if row != self.tableWidget.rowCount() - 1:
             with sqlite3.connect('translation_history_db.db') as db:
                 cur = db.cursor()
-                cell = self.tableWidget.itemAt(0, row).text()
+                data = []
+                for i in range(self.tableWidget.rowCount()):
+                    data.append(self.tableWidget.item(i, 0).text())
+                print("data ->", data)
                 cur.execute(
-                    f"""DELETE FROM history WHERE id = {int(cell) + (row)}""")
+                    f"""DELETE FROM history WHERE id = {int(data[row])}""")
                 db.commit()
                 if row > -1:
                     self.tableWidget.removeRow(row)
@@ -161,16 +173,22 @@ class Txtfiles_translate(QMainWindow, QdesignTxtTranslate):
     def save_function_txtfiles(self):
         with sqlite3.connect('translation_history_db.db') as db:
             cur = db.cursor()
-            print(1)
             lang = self.language.currentText()
             if self.name_file_button.text() != 'paste your file here':
                 if self.text_of_new_file.toPlainText() != '':
-                    id_language = cur.execute(
-                        f'''SELECT id FROM languages WHERE name = "{lang}"''').fetchall()
-                    cur.execute(f'''
-                    INSERT INTO history(original_text, translated_text, language)
-                    VALUES("{self.text_of_your_file.toPlainText()}", "{self.text_of_new_file.toPlainText()}", {id_language[0][0]})''').fetchall()
-                    db.commit()
+                    if self.text_of_new_file.toPlainText() == self.translate_text(
+                            self.text_of_new_file.toPlainText(),
+                            lang_in_code[lang]):
+                        id_language = cur.execute(
+                            f'''SELECT id FROM languages WHERE name = "{lang}"''').fetchall()
+                        cur.execute(f'''
+                        INSERT INTO history(original_text, translated_text, language)
+                        VALUES("{self.text_of_your_file.toPlainText()}",
+                        "{self.text_of_new_file.toPlainText()}", {id_language[0][0]})''').fetchall()
+                        db.commit()
+                    else:
+                        self.status.showMessage(
+                            'Сначала переведите выбраный файл на выбраный язык')
                 else:
                     self.status.showMessage('Сначала переведите выбраный файл')
             else:
@@ -185,13 +203,14 @@ class Txtfiles_translate(QMainWindow, QdesignTxtTranslate):
         fname = QFileDialog.getOpenFileName(self, 'Выберите текст-файл', '',
                                             'Файл (*.txt)')[0]
         file_name = fname.split('/')
-        self.name_file_button.setText(f'{file_name[-1]}')
-        with open(fname, 'r', encoding='UTF-8') as f:
-            file = f.readlines()
-        for i in file:
-            text_wanted += f'{i}'
-        self.text_of_your_file.setText(text_wanted)
-        self.fname = fname
+        if fname != '':
+            self.name_file_button.setText(f'{file_name[-1]}')
+            with open(fname, 'r', encoding='UTF-8') as f:
+                file = f.readlines()
+            for i in file:
+                text_wanted += f'{i}'
+            self.text_of_your_file.setText(text_wanted)
+            self.fname = fname
 
     # функция перевода всего файла построчно
     def translate_file(self, file_path, target_lang):
@@ -251,6 +270,7 @@ class TranslatorWelcomeWindow(QMainWindow, QdesignWelcomeWindow):
         self.buttonsvalue.show()
 
     def sqlWiget_function(self):
+        self.SQLWIGET.__init__()
         self.SQLWIGET.show()
 
     def transition_second_window(self):
@@ -284,7 +304,8 @@ class Translator_second(QMainWindow, QdesignSimpletranslate):
                             f'''SELECT id FROM languages WHERE name = "{lang}"''').fetchall()
                         cur.execute(f'''
                         INSERT INTO history(original_text, translated_text, language)
-                        VALUES("{self.textEdit.toPlainText()}", "{self.textEdit_2.toPlainText()}", {id_language[0][0]})''').fetchall()
+                        VALUES("{self.textEdit.toPlainText()}",
+                        "{self.textEdit_2.toPlainText()}", {id_language[0][0]})''').fetchall()
                         db.commit()
                     else:
                         self.status.showMessage(
