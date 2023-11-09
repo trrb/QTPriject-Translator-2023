@@ -104,14 +104,12 @@ class SQLWigetHistory(QMainWindow, QdesignHistoryWindow):
 
     def delete_buttonClicked(self):
         row = self.tableWidget.currentRow()
-        print(row)
         if row != self.tableWidget.rowCount() - 1:
             with sqlite3.connect('translation_history_db.db') as db:
                 cur = db.cursor()
                 data = []
                 for i in range(self.tableWidget.rowCount()):
                     data.append(self.tableWidget.item(i, 0).text())
-                print("data ->", data)
                 cur.execute(
                     f"""DELETE FROM history WHERE id = {int(data[row])}""")
                 db.commit()
@@ -250,8 +248,8 @@ class Txtfiles_translate(QMainWindow, QdesignTxtTranslate):
 
 # Класс отвечающий за начальное окно
 class TranslatorWelcomeWindow(QMainWindow, QdesignWelcomeWindow):
-    def __init__(self, *arg):
-        super().__init__(*arg)
+    def __init__(self):
+        super().__init__()
         self.setupUi(self)
         self.transportate = Translator_second()
         self.buttonsvalue = ButtonsValue()
